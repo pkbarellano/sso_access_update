@@ -71,8 +71,11 @@ class AccessLibrary
 
         $this->CI->load->model($model);
 
-        switch ($app) {
+        $inactiveEmployees = array_map(function ($item) {
+            return $item->empNo;
+        }, $data);
 
+        switch ($app) {
             case 'STS':
 
                 $activeEmployees = array_map(function ($item) {
@@ -82,28 +85,7 @@ class AccessLibrary
                     ];
                 }, $data);
 
-                $inactiveEmployees = array_map(function ($item) {
-                    return $item->empNo;
-                }, $data);
-
-                $this->status = $this->CI->$model->updateAccess($activeEmployees, $inactiveEmployees, strtolower($app));
-
-                if ($this->status === TRUE) {
-
-                    $this->remarks = "Employee access update was completed.";
-
-                    $this->httpCode = REST_Controller::HTTP_OK;
-                } else {
-
-                    log_message('ERROR', $this->status);
-
-                    $this->remarks = "Failed to update " . $app . " employee access.";
-
-                    $this->httpCode = REST_Controller::HTTP_UNPROCESSABLE_ENTITY;
-                }
-
                 break;
-
             case 'PFP':
 
                 $activeEmployees = array_map(function ($item) {
@@ -113,27 +95,61 @@ class AccessLibrary
                     ];
                 }, $data);
 
-                $inactiveEmployees = array_map(function ($item) {
-                    return $item->empNo;
+                break;
+
+            case 'HELPDESK':
+
+                $activeEmployees = array_map(function ($item) {
+                    return [
+                        'employee_no' => $item->empNo,
+                        'is_active' => '1'
+                    ];
                 }, $data);
 
-                $this->status = $this->CI->$model->updateAccess($activeEmployees, $inactiveEmployees, strtolower($app));
+                break;
 
-                if ($this->status === TRUE) {
+            case 'GC':
 
-                    $this->remarks = "Employee access update was completed.";
-
-                    $this->httpCode = REST_Controller::HTTP_OK;
-                } else {
-
-                    log_message('ERROR', $this->status);
-
-                    $this->remarks = "Failed to update " . $app . " employee access.";
-
-                    $this->httpCode = REST_Controller::HTTP_UNPROCESSABLE_ENTITY;
-                }
+                $activeEmployees = array_map(function ($item) {
+                    return [
+                        'empNo' => $item->empNo,
+                        'userStat' => 'A'
+                    ];
+                }, $data);
 
                 break;
+
+            case 'PO_TRACKER':
+
+                $activeEmployees = array_map(function ($item) {
+                    return [
+                        'empNo' => $item->empNo,
+                        'userStat' => 'A'
+                    ];
+                }, $data);
+
+                break;
+            default:
+
+                $activeEmployees = null;
+
+                break;
+        }
+
+        $this->status = $this->CI->$model->updateAccess($activeEmployees, $inactiveEmployees, strtolower($app));
+
+        if ($this->status === TRUE) {
+
+            $this->remarks = "Employee access update was completed.";
+
+            $this->httpCode = REST_Controller::HTTP_OK;
+        } else {
+
+            log_message('ERROR', $this->status);
+
+            $this->remarks = "Failed to update " . $app . " employee access.";
+
+            $this->httpCode = REST_Controller::HTTP_UNPROCESSABLE_ENTITY;
         }
     }
 

@@ -79,13 +79,19 @@ class STS_model extends MY_Model
 
         $db = $app . 'DB';
 
-        $this->$db->where('userStat !=', 'A');
-        $this->$db->update_batch('tblUsers', $activeEmpNos, 'empNo');
+        if (!is_null($activeEmpNos) && !empty($activeEmpNos)) {
 
-        $this->$db->where_not_in('empNo', $inactiveEmpNos);
-        $this->$db->where('userStat =', 'A');
-        $this->$db->or_where("(empNo IS NULL AND userStat = 'A')");
-        $this->$db->update('tblUsers', ['userStat' => 'D']);
+            $this->$db->where('userStat !=', 'A');
+            $this->$db->update_batch('tblUsers', $activeEmpNos, 'empNo');
+        }
+
+        if (!is_null($inactiveEmpNos) && !empty($inactiveEmpNos)) {
+
+            $this->$db->where_not_in('empNo', $inactiveEmpNos);
+            $this->$db->where('userStat =', 'A');
+            $this->$db->or_where("(empNo IS NULL AND userStat = 'A')");
+            $this->$db->update('tblUsers', ['userStat' => 'D']);
+        }
 
         return $this->_transEnd($app);
     }

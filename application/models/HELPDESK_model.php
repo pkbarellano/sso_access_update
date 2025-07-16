@@ -79,25 +79,35 @@ class HELPDESK_model extends MY_Model
 
         $db = $app . 'DB';
 
-        /** USERS */
+        if (!is_null($activeEmpNos) && !empty($activeEmpNos)) {
 
-        $this->$db->where('rtrim(is_active) !=', '1');
-        $this->$db->update_batch('users_tb', $activeEmpNos, 'employee_no');
+            /** USERS */
 
-        $this->$db->where_not_in('rtrim(employee_no)', $inactiveEmpNos);
-        $this->$db->where('rtrim(is_active) =', '0');
-        $this->$db->or_where("(rtrim(employee_no) IS NULL AND rtrim(is_active) = '1')");
-        $this->$db->update('users_tb', ['rtrim(is_active)' => '0']);
+            $this->$db->where('rtrim(is_active) !=', '1');
+            $this->$db->update_batch('users_tb', $activeEmpNos, 'employee_no');
 
-        /** AGENTS */
+            /** AGENTS */
 
-        $this->$db->where('rtrim(is_active) !=', '1');
-        $this->$db->update_batch('agent_tb', $activeEmpNos, 'employee_no');
+            $this->$db->where('rtrim(is_active) !=', '1');
+            $this->$db->update_batch('agent_tb', $activeEmpNos, 'employee_no');
+        }
 
-        $this->$db->where_not_in('rtrim(employee_no)', $inactiveEmpNos);
-        $this->$db->where('rtrim(is_active) =', '0');
-        $this->$db->or_where("(rtrim(employee_no) IS NULL AND rtrim(is_active) = '1')");
-        $this->$db->update('agent_tb', ['rtrim(is_active)' => '0']);
+        if (!is_null($inactiveEmpNos) && !empty($inactiveEmpNos)) {
+
+            /** USERS */
+
+            $this->$db->where_not_in('rtrim(employee_no)', $inactiveEmpNos);
+            $this->$db->where('rtrim(is_active) =', '0');
+            $this->$db->or_where("(rtrim(employee_no) IS NULL AND rtrim(is_active) = '1')");
+            $this->$db->update('users_tb', ['rtrim(is_active)' => '0']);
+
+            /** AGENTS */
+
+            $this->$db->where_not_in('rtrim(employee_no)', $inactiveEmpNos);
+            $this->$db->where('rtrim(is_active) =', '0');
+            $this->$db->or_where("(rtrim(employee_no) IS NULL AND rtrim(is_active) = '1')");
+            $this->$db->update('agent_tb', ['rtrim(is_active)' => '0']);
+        }
 
         return $this->_transEnd($app);
     }

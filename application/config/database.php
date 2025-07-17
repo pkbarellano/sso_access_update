@@ -71,9 +71,6 @@ defined('BASEPATH') or exit('No direct script access allowed');
 | the query builder class.
 */
 
-$active_group = 'po_trackerDB';
-$query_builder = TRUE;
-
 $db['po_trackerDB'] = array(
 	'dsn'	=> '',
 	'hostname' => '',
@@ -95,9 +92,6 @@ $db['po_trackerDB'] = array(
 	'failover' => array(),
 	'save_queries' => TRUE
 );
-
-$active_group = 'gcDB';
-$query_builder = TRUE;
 
 $db['gcDB'] = array(
 	'dsn'	=> '',
@@ -121,9 +115,6 @@ $db['gcDB'] = array(
 	'save_queries' => TRUE
 );
 
-$active_group = 'helpdeskDB';
-$query_builder = TRUE;
-
 $db['helpdeskDB'] = array(
 	'dsn'	=> '',
 	'hostname' => '',
@@ -146,9 +137,6 @@ $db['helpdeskDB'] = array(
 	'save_queries' => TRUE
 );
 
-$active_group = 'pfpDB';
-$query_builder = TRUE;
-
 $db['pfpDB'] = array(
 	'dsn'	=> '',
 	'hostname' => '',
@@ -170,9 +158,6 @@ $db['pfpDB'] = array(
 	'failover' => array(),
 	'save_queries' => TRUE
 );
-
-$active_group = 'stsDB';
-$query_builder = TRUE;
 
 $db['stsDB'] = array(
 	'dsn'	=> '',

@@ -3,32 +3,26 @@
 class MY_Model extends CI_Model
 {
 
-    protected $stsDB;
-    protected $pfpDB;
-    protected $helpdeskDB;
+    public $dynamicDb;
 
     function __construct()
     {
 
         parent::__construct();
-
-        $this->stsDB = $this->load->database('stsDB', TRUE, 'stsDB');
-        $this->pfpDB = $this->load->database('pfpDB', TRUE, 'pfpDB');
-        $this->helpdeskDB = $this->load->database('helpdeskDB', TRUE, 'helpdeskDB');
     }
 
-    protected function _transStart($db = 'db')
+    protected function _transStart($dynamicDb = FALSE)
     {
 
-        $db = ($db !== 'db') ? $db . 'DB' : $db;
+        $db = ($dynamicDb === TRUE) ? 'dynamicDb' : 'db';
 
         $this->$db->trans_start();
     }
 
-    protected function _transEnd($db = 'db')
+    protected function _transEnd($dynamicDb = FALSE)
     {
 
-        $db = ($db !== 'db') ? $db . 'DB' : $db;
+        $db = ($dynamicDb === TRUE) ? 'dynamicDb' : 'db';
 
         $this->$db->trans_complete();
 
@@ -45,15 +39,49 @@ class MY_Model extends CI_Model
         }
     }
 
-    protected function _transStop($db = 'db')
+    protected function _transStop($dynamicDb = FALSE)
     {
 
-        $db = ($db !== 'db') ? $db . 'DB' : $db;
+        $db = ($dynamicDb === TRUE) ? 'dynamicDb' : 'db';
 
         $this->$db->trans_complete();
 
         $this->$db->trans_rollback();
 
         return false;
+    }
+
+    protected function _createConnection($config = [])
+    {
+
+        $db = [
+            'dsn'    => '',
+            'hostname' => $config['hostname'],
+            'username' => $config['username'],
+            'password' => $config['password'],
+            'database' => $config['database'],
+            'dbdriver' => $config['driver'],
+            'dbprefix' => '',
+            'pconnect' => FALSE,
+            'db_debug' => FALSE,
+            'cache_on' => FALSE,
+            'cachedir' => '',
+            'char_set' => 'utf8',
+            'dbcollat' => 'utf8_general_ci',
+            'swap_pre' => '',
+            'encrypt' => FALSE,
+            'compress' => FALSE,
+            'stricton' => FALSE,
+            'failover' => array(),
+            'save_queries' => TRUE
+        ];
+
+        $this->dynamicDb = $this->load->database($db, TRUE);
+    }
+
+    protected function _closeConnection()
+    {
+
+        $this->dynamicDb->close();
     }
 }

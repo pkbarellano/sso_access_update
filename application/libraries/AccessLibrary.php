@@ -14,16 +14,12 @@ class AccessLibrary
         $this->CI = &get_instance();
     }
 
-    private function _createRequest($referenceID = '', $header = [], $postFields = [], $app = '')
+    private function _createRequest($referenceID = '', $header = [], $postFields = [], $table = '')
     {
 
-        $app = strtoupper($app);
+        $this->CI->load->model('CoreManagement_model');
 
-        $model = $app . '_model';
-
-        $this->CI->load->model($model);
-
-        $createRequest = $this->CI->$model->createRequest($referenceID, $header, $postFields, json_encode($header), json_encode($postFields), strtolower($app));
+        $createRequest = $this->CI->CoreManagement_model->createRequest($referenceID, $header, $postFields, json_encode($header), json_encode($postFields), $table);
 
         if ($createRequest === FALSE) {
 
@@ -38,16 +34,12 @@ class AccessLibrary
         return;
     }
 
-    private function _createResponse($referenceID = '', $status = 0, $message = "", $data = [], $jsonResponse = '', $app = '')
+    private function _createResponse($referenceID = '', $status = 0, $message = "", $data = [], $jsonResponse = '', $table = '')
     {
 
-        $app = strtoupper($app);
+        $this->CI->load->model('CoreManagement_model');
 
-        $model = $app . "_model";
-
-        $this->CI->load->model($model);
-
-        $createResponse = $this->CI->$model->createResponse($referenceID, $status, $message, json_encode($data), $jsonResponse, strtolower($app));
+        $createResponse = $this->CI->CoreManagement_model->createResponse($referenceID, $status, $message, json_encode($data), $jsonResponse, $table);
 
         if ($createResponse === FALSE) {
 
@@ -62,81 +54,12 @@ class AccessLibrary
         return;
     }
 
-    private function _updateAccess($data = [], $app = '')
+    private function _updateAccess($data = [], $dbConfig = [], $tableConfig = [])
     {
 
-        $app = strtoupper($app);
+        $this->CI->load->model('CoreManagement_model');
 
-        $model = $app . "_model";
-
-        $this->CI->load->model($model);
-
-        $inactiveEmployees = array_map(function ($item) {
-            return $item->empNo;
-        }, $data);
-
-        switch ($app) {
-            case 'STS':
-
-                $activeEmployees = array_map(function ($item) {
-                    return [
-                        'empNo' => $item->empNo,
-                        'userStat' => 'A'
-                    ];
-                }, $data);
-
-                break;
-            case 'PFP':
-
-                $activeEmployees = array_map(function ($item) {
-                    return [
-                        'empNo' => $item->empNo,
-                        'userStat' => 'A'
-                    ];
-                }, $data);
-
-                break;
-
-            case 'HELPDESK':
-
-                $activeEmployees = array_map(function ($item) {
-                    return [
-                        'employee_no' => $item->empNo,
-                        'is_active' => '1'
-                    ];
-                }, $data);
-
-                break;
-
-            case 'GC':
-
-                $activeEmployees = array_map(function ($item) {
-                    return [
-                        'empNo' => $item->empNo,
-                        'userStat' => 'A'
-                    ];
-                }, $data);
-
-                break;
-
-            case 'PO_TRACKER':
-
-                $activeEmployees = array_map(function ($item) {
-                    return [
-                        'empNo' => $item->empNo,
-                        'userStat' => 'A'
-                    ];
-                }, $data);
-
-                break;
-            default:
-
-                $activeEmployees = null;
-
-                break;
-        }
-
-        $this->status = $this->CI->$model->updateAccess($activeEmployees, $inactiveEmployees, strtolower($app));
+        $this->status = $this->CI->CoreManagement_model->udpateAccess($data, $dbConfig, $tableConfig);
 
         if ($this->status === TRUE) {
 
@@ -147,20 +70,20 @@ class AccessLibrary
 
             log_message('ERROR', $this->status);
 
-            $this->remarks = "Failed to update " . $app . " employee access.";
+            $this->remarks = "Failed to update " . $dbConfig['applicationName'] . " employee access.";
 
             $this->httpCode = REST_Controller::HTTP_UNPROCESSABLE_ENTITY;
         }
     }
 
-    public function updateStatus($referenceID = '', $status = 0, $message = '', $data = [], $header = [], $postFields = [], $jsonResponse = '', $app = '')
+    public function updateStatus($referenceID = '', $status = 0, $message = '', $data = [], $header = [], $postFields = [], $jsonResponse = '', $dbConfig = [], $tableConfig = [])
     {
 
-        $this->_createRequest($referenceID, $header, $postFields, $app);
+        $this->_createRequest($referenceID, $header, $postFields, $tableConfig['tableLogRequest']);
 
-        $this->_createResponse($referenceID, $status, $message, $data, $jsonResponse, $app);
+        $this->_createResponse($referenceID, $status, $message, $data, $jsonResponse, $tableConfig['tableLogResponse']);
 
-        $this->_updateAccess($data, $app);
+        $this->_updateAccess($data, $dbConfig, $tableConfig);
 
         return [
             'status' => $this->status,

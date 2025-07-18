@@ -8,6 +8,7 @@ class MY_Controller extends REST_Controller
 
     protected $appConfig;
     protected $allowedTypes;
+    protected $dbConfig;
 
     public function __construct()
     {
@@ -18,22 +19,10 @@ class MY_Controller extends REST_Controller
 
         $this->appConfig = $this->Common_model->getAppConfig()->row_array();
 
-        $this->allowedTypes = [
-            'STS',
-            'PFP',
-            'HELPDESK',
-            'GC',
-            'PO_TRACKER'
-        ];
+        $this->dbConfig = $this->Common_model->getDatabaseConnection();
     }
 
-    private function _validateType($type)
-    {
-
-        return (bool)in_array($type, $this->allowedTypes);
-    }
-
-    protected function _generateReferenceID($type = '')
+    protected function _generateReferenceID($table = '')
     {
 
         $referenceID = null;
@@ -41,47 +30,39 @@ class MY_Controller extends REST_Controller
 
         $this->PayloadFormat->customResponse(FALSE, ErrorHandler::UNKNOWN_ERROR, REST_Controller::HTTP_INTERNAL_SERVER_ERROR);
 
-        if ($this->_validateType($type) === true) {
+        do {
 
-            do {
+            if ($try == 1) {
 
-                if ($try == 100) {
+                $this->PayloadFormat->customResponse(FALSE, ErrorHandler::UNABLE_TO_VALIDATE_REFERECE_ID, REST_Controller::HTTP_UNPROCESSABLE_ENTITY);
 
-                    $this->PayloadFormat->customResponse(FALSE, ErrorHandler::UNABLE_TO_VALIDATE_REFERECE_ID, REST_Controller::HTTP_UNPROCESSABLE_ENTITY);
+                $referenceID = null;
 
-                    $referenceID = null;
-
-                    break;
-                }
-
-                $referenceID = uniqid(strtotime(date('Y-m-d h:i:s')));
-
-                $try++;
-            } while ($this->_validateReferenceID($type, $referenceID) === false);
-
-            if ($referenceID !== null) {
-
-                if ($this->_createReferenceID($type, $referenceID) === FALSE) {
-
-                    $referenceID = null;
-                }
+                break;
             }
-        } else {
 
-            $this->PayloadFormat->customResponse(FALSE, ErrorHandler::INVALID_REFERECE_ID_TYPE, REST_Controller::HTTP_UNPROCESSABLE_ENTITY);
+            $referenceID = uniqid(strtotime(date('Y-m-d h:i:s')));
+
+            $try++;
+        } while ($this->_validateReferenceID($referenceID, $table) === false);
+
+        if ($referenceID !== null) {
+
+            if ($this->_createReferenceID($referenceID, $table) === FALSE) {
+
+                $referenceID = null;
+            }
         }
 
         return $referenceID;
     }
 
-    private function _createReferenceID($type = "", $referenceID = "")
+    private function _createReferenceID($referenceID = "", $table = "")
     {
 
-        $model = $type . "_model";
+        $this->load->model('CoreManagement_model');
 
-        $this->load->model($model);
-
-        $createReferenceID = $this->$model->createReferenceID($referenceID);
+        $createReferenceID = $this->CoreManagement_model->createReferenceID($referenceID, $table);
 
         if ($createReferenceID === false) {
 
@@ -95,16 +76,14 @@ class MY_Controller extends REST_Controller
         return TRUE;
     }
 
-    private function _validateReferenceID($type = "", $referenceID = "")
+    private function _validateReferenceID($referenceID = "", $table = "")
     {
 
-        $model = $type . '_model';
-
-        $this->load->model($model);
+        $this->load->model('CoreManagement_model');
 
         $referenceStatus = false;
 
-        $getReferenceID = $this->$model->getReferenceID($referenceID);
+        $getReferenceID = $this->CoreManagement_model->getReferenceID($referenceID, $table);
 
         if ($getReferenceID !== FALSE) {
 
@@ -121,6 +100,7 @@ class MY_Controller extends REST_Controller
 
     private function _sysLog(
         $referenceID = '',
+        $applicationName = '',
         $sysCode = '',
         $httpMethod = '',
         $scriptClass = '',
@@ -159,6 +139,7 @@ class MY_Controller extends REST_Controller
 
         $params = [
             'referenceID' => $referenceID,
+            'applicationName' => $applicationName,
             'sysCode' => $sysCode,
             'json' => $json,
             'error' => $hccurlError,
@@ -201,11 +182,12 @@ class MY_Controller extends REST_Controller
         }
     }
 
-    protected function createSysLog($referenceID = '', $sysCode = '', $httpMethod = '', $scriptClass = '', $scriptMethod = '', $description = '', $hccurl = [], $hccurlError = "")
+    protected function createSysLog($referenceID = '', $applicationName, $sysCode = '', $httpMethod = '', $scriptClass = '', $scriptMethod = '', $description = '', $hccurl = [], $hccurlError = "")
     {
 
         $this->_sysLog(
             $referenceID,
+            $applicationName,
             $sysCode,
             $httpMethod,
             $scriptClass,

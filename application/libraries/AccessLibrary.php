@@ -59,7 +59,7 @@ class AccessLibrary
 
         $this->CI->load->model('CoreManagement_model');
 
-        $this->status = $this->CI->CoreManagement_model->udpateAccess($data, $dbConfig, $tableConfig);
+        $this->status = $this->CI->CoreManagement_model->updateAccess($data, $dbConfig, $tableConfig);
 
         if ($this->status === TRUE) {
 

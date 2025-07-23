@@ -43,6 +43,7 @@ class Common_model extends MY_Model
             'tableName',
             'employeeNumberColumn',
             'statusColumn',
+			'dataType',
             'activeValue',
             'inactiveValue',
             'tableLogReferenceID',

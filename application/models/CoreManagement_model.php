@@ -151,7 +151,7 @@ class CoreManagement_model extends MY_Model
         return $this->db->query($query);
     }
 
-    function udpateAccess($data = [], $dbConfig = [], $tableConfig = [])
+    function updateAccess($data = [], $dbConfig = [], $tableConfig = [])
     {
 
         $this->_createConnection($dbConfig);
@@ -160,41 +160,82 @@ class CoreManagement_model extends MY_Model
 
         $employeeNumberColumn = $tableConfig['employeeNumberColumn'];
         $statusColumn = $tableConfig['statusColumn'];
+        $tableName = $tableConfig['tableName'];
         $activeValue = $tableConfig['activeValue'];
         $inactiveValue = $tableConfig['inactiveValue'];
-        $tableName = $tableConfig['tableName'];
+        $dataType = strtoupper($tableConfig['dataType']);
 
         if (is_array($data) && !is_null($data) && !empty($data)) {
 
-            $activeEmployees = array_map(function ($item) use ($employeeNumberColumn, $statusColumn, $activeValue) {
-                return [
-                    $employeeNumberColumn => $item->empNo,
-                    $statusColumn => $activeValue
-                ];
-            }, $data);
+            if (in_array(strtoupper($dataType), ['STRING', 'INTEGER'])) {
 
-            $inactiveEmployees = array_map(function ($item) {
-                return $item->empNo;
-            }, $data);
+                $activeEmployees = array_map(function ($item) use ($employeeNumberColumn, $statusColumn, $activeValue) {
+                    return [
+                        $employeeNumberColumn => $item->empNo,
+                        $statusColumn => $activeValue
+                    ];
+                }, $data);
 
-            $this->dynamicDb->where("{$statusColumn} !=", $activeValue)
-                ->update_batch($tableName, $activeEmployees, $employeeNumberColumn);
+                $inactiveEmployees = array_map(function ($item) {
+                    return $item->empNo;
+                }, $data);
 
-            $this->dynamicDb->where_not_in($employeeNumberColumn, $inactiveEmployees)
-                ->where("{$statusColumn} =", $activeValue)
-                ->or_where("({$employeeNumberColumn} IS NULL AND {$statusColumn} = '{$activeValue}')")
-                ->update($tableName, [$statusColumn => $inactiveValue]);
+                $this->dynamicDb->where("{$statusColumn} !=", $activeValue)
+                    ->update_batch($tableName, $activeEmployees, $employeeNumberColumn);
+
+                $this->dynamicDb->where_not_in($employeeNumberColumn, $inactiveEmployees)
+                    ->where("{$statusColumn} =", $activeValue)
+                    ->or_where("({$employeeNumberColumn} IS NULL AND {$statusColumn} = '{$activeValue}')")
+                    ->update($tableName, [$statusColumn => $inactiveValue]);
+            }
+
+            if ($dataType === 'DATE') {
+
+                $dataChunks = array_chunk($data, 1000);
+
+                foreach ($dataChunks as $dataChunk) {
+
+                    $activeEmployees = array_map(function ($item) {
+                        return $item->empNo;
+                    }, $dataChunk);
+
+                    $this->dynamicDb->where("({$statusColumn} IS NOT NULL OR {$statusColumn} != '')", NULL, FALSE)
+                        ->where_in($employeeNumberColumn, $activeEmployees)
+                        ->set($statusColumn, $activeValue, FALSE)
+                        ->update($tableName);
+                }
+
+                $activeEmployees = array_map(function ($item) {
+                    return $item->empNo;
+                }, $data);
+
+                $this->dynamicDb->where("({$statusColumn} IS NULL OR {$statusColumn} = '')", NULL, FALSE)
+                    ->where_not_in($employeeNumberColumn, $activeEmployees)
+                    ->set($statusColumn, $inactiveValue, FALSE)
+                    ->update($tableName);
+            }
         } else {
 
-            $this->dynamicDb->where("{$statusColumn} =", $activeValue)
-                ->or_where("({$employeeNumberColumn} IS NULL AND {$statusColumn} = '{$activeValue}')")
-                ->update($tableName, [$statusColumn => $inactiveValue]);
+            if (in_array($dataType, ['STRING', 'INTEGER'])) {
+
+                $this->dynamicDb->where("{$statusColumn} =", $activeValue)
+                    ->or_where("({$employeeNumberColumn} IS NULL AND {$statusColumn} = '{$activeValue}')")
+                    ->update($tableName, [$statusColumn => $inactiveValue]);
+            }
+
+            if ($dataType === 'DATE') {
+
+                $this->dynamicDb->where("({$statusColumn} IS NULL OR {$statusColumn} = '')", NULL, FALSE)
+                    ->or_where("({$employeeNumberColumn} IS NULL OR {$employeeNumberColumn} = '')", NULL, FALSE)
+                    ->set($statusColumn, strtoupper($inactiveValue), FALSE)
+                    ->update($tableName);
+            }
         }
 
         $status = $this->_transEnd(TRUE);
 
         $this->_closeConnection();
 
-        return $status;
+        return $status;v
     }
 }

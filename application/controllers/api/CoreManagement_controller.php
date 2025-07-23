@@ -75,7 +75,7 @@ class CoreManagement_controller extends MY_Controller
             }
         } else {
 
-            $this->PayloadFormat->customresponse(FALSE, 'No database configuration available.', REST_Controller::HTTP_UNPROCESSABLE_ENTITY);
+            $this->PayloadFormat->customResponse(FALSE, 'No database configuration available.', REST_Controller::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         return $this->response($this->PayloadFormat->responseArray, $this->PayloadFormat->httpCode);
